@@ -126,6 +126,8 @@ def initialize() {
   } catch (Exception e) {
     error("[d:initialize] ${e}")
   }
+
+  runEvery5Minutes(checkConnection)
 }
 
 // ========================================================
@@ -168,6 +170,16 @@ void disconnect() {
     if (interfaces.mqtt.isConnected()) {
       connected()
     }
+  }
+}
+
+// ========================================================
+// PERIODIC CONNECTION CHECK
+// ========================================================
+
+void checkConnection() {
+  if (notMqttConnected()) {
+    sendEvent(name: 'connectionState', value: 'disconnected')
   }
 }
 

@@ -784,6 +784,27 @@ def initialize() {
   subscribe(location, 'mode', inputHandler)
   subscribe(location, 'routineExecuted', inputHandler)
 
+
+  // TODO: Find out what this does - I think it's nothing useful.
+  // Subscribe to new events from devices
+  // CAPABILITY_MAP.each { key, capability ->
+  //   capability['attributes'].each { attribute ->
+  //     subscribe(settings[key], attribute, inputHandler)
+  //   }
+  // }
+
+  initializeMqtt()
+
+  // Subscribe to message events from the mqttLink
+  subscribe(mqttLink, 'message', mqttLinkHandler)
+
+  // Subscribe to connection state events from the mqttLink
+  subscribe(mqttLink, 'connectionState', connectionStateHandler)
+
+  updateConfig()
+}
+
+def initializeMqtt() {
   def attributes = [
     notify: ['Contacts', 'System']
   ]
@@ -812,19 +833,6 @@ def initialize() {
       attributes[capabilityId].push(normalizedId)
     }
   }
-
-  // TODO: Find out what this does - I think it's nothing useful.
-  // Subscribe to new events from devices
-  // CAPABILITY_MAP.each { key, capability ->
-  //   capability['attributes'].each { attribute ->
-  //     subscribe(settings[key], attribute, inputHandler)
-  //   }
-  // }
-
-  // Subscribe to events from the mqttLink
-  subscribe(mqttLink, 'message', mqttLinkHandler)
-
-  updateConfig()
 
   updateSubscription(attributes)
 }
@@ -1065,6 +1073,14 @@ def updateSubscription(attributes) {
   debug("[a:updateSubscription] Updating subscription: ${json}")
 
   mqttLink.deviceNotification(json)
+}
+
+def connectionStateHandler(evt) {
+  debug("[a:connectionStateHandler] Connection state: ${evt.value}")
+  // debug("[a:connectionStateHandler] device connected: ${mqttLink.mqttConnected()}")
+  if (evt.value == 'disconnected') {
+    initializeMqtt()
+  }
 }
 
 // Receive an inbound event from the MQTT Link Driver
